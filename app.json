@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "MyPhotoAI",
+    "slug": "myphotoai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.myphotoai.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "MyPhotoAI needs access to your photos to build your private local photo library.",
+        "NSPhotoLibraryAddUsageDescription": "MyPhotoAI can save photos to your library when you choose.",
+        "NSCalendarsUsageDescription": "MyPhotoAI uses your calendar for tasks and events you create.",
+        "NSRemindersUsageDescription": "MyPhotoAI can connect tasks to reminders you create.",
+        "NSUserTrackingUsageDescription": "MyPhotoAI does not track you or sell your data."
+      }
+    },
+    "android": {
+      "package": "com.myphotoai.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#08090B"
+      },
+      "permissions": [
+        "READ_MEDIA_IMAGES",
+        "POST_NOTIFICATIONS",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow MyPhotoAI to privately organize photos on this device."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#8AB4FF",
+          "defaultChannel": "tasks"
+        }
+      ],
+      "expo-calendar",
+      "expo-sharing",
+      "expo-sqlite"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    },
+    "androidNavigationBar": {
+      "backgroundColor": "#08090B",
+      "barStyle": "light-content"
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#08090B",
+      "barStyle": "light-content",
+      "translucent": true
+    }
+  }
+}
