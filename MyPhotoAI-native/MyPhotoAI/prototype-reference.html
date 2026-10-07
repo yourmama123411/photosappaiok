@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>MyPhoto</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Inter,system-ui,sans-serif}
+body{overflow:hidden}
+button,input,textarea{font:inherit}
+button{border:0;color:inherit}
+.app{height:100dvh;position:relative;background:#000;overflow:hidden}
+.content{height:100%;overflow-y:auto;overflow-x:hidden;padding:0 2px calc(104px + env(safe-area-inset-bottom));scroll-behavior:smooth}
+.content::-webkit-scrollbar{display:none}
+
+.page{display:none;min-height:100%}.page.active{display:block}
+.header{position:sticky;top:0;z-index:20;padding:calc(14px + env(safe-area-inset-top)) 17px 12px;background:linear-gradient(#000 68%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.header h1{font-size:30px;line-height:1.05;margin:0;font-weight:750;letter-spacing:-.8px}
+.header .small{color:#8e8e93;font-size:13px;margin-top:4px}
+.date{font-size:18px;font-weight:650;letter-spacing:-.25px;padding:15px 10px 9px;color:#f5f5f7}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.photo{aspect-ratio:1/1;background:#17181c;overflow:hidden;position:relative;border-radius:var(--photo-radius,18px);transition:border-radius .28s ease,transform .22s ease}.photo:active{transform:scale(.97)}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}.photo.longpressing{transform:scale(.96);filter:brightness(.72)}
+.photo-ai-badge{position:absolute;right:7px;top:7px;width:25px;height:25px;border-radius:9px;background:rgba(0,0,0,.48);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;font-size:13px}
+.photo.placeholder:nth-child(4n){background:linear-gradient(135deg,#1d2530,#485568)}
+.photo.placeholder:nth-child(4n+1){background:linear-gradient(145deg,#33241f,#9b7561)}
+.photo.placeholder:nth-child(4n+2){background:linear-gradient(145deg,#202d27,#6c8b7c)}
+.photo.placeholder:nth-child(4n+3){background:linear-gradient(145deg,#29263a,#786e9e)}
+
+.empty{padding:90px 30px;text-align:center;color:#8e8e93}.empty b{display:block;color:#fff;font-size:20px;margin-bottom:8px}
+
+.bottom-wrap{position:absolute;z-index:100;left:0;right:0;bottom:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));pointer-events:none}
+.bottom{height:64px;border:1px solid rgba(255,255,255,.1);border-radius:25px;background:rgba(28,28,30,.72);backdrop-filter:blur(26px) saturate(170%);-webkit-backdrop-filter:blur(26px) saturate(170%);box-shadow:0 10px 35px rgba(0,0,0,.45);display:grid;grid-template-columns:repeat(5,1fr);align-items:center;pointer-events:auto}
+.nav{height:52px;background:none;color:#8e8e93;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:600;transition:transform .22s cubic-bezier(.2,.8,.2,1),color .22s}
+.nav .icon{font-size:22px;line-height:20px}.nav.active{color:#fff}.nav.active .icon{transform:scale(1.08)}.nav:active{transform:scale(.9)}
+
+.search-page{min-height:100%;padding:calc(18px + env(safe-area-inset-top)) 17px 130px}
+.search-title{font-size:32px;font-weight:750;letter-spacing:-1px;margin:0 0 20px}
+.searchbox{height:52px;border-radius:17px;background:rgba(45,45,48,.78);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);display:flex;align-items:center;padding:0 15px;gap:9px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.searchbox .glass{font-size:19px;color:#aaa}.searchbox input{border:0;outline:0;background:none;color:#fff;flex:1;font-size:17px}.searchbox input::placeholder{color:#98989d}
+.suggestions{margin-top:18px}.suggest{padding:15px 4px;border-bottom:1px solid #242426;color:#d7d7da;font-size:16px}.suggest span{color:#8e8e93;font-size:13px;display:block;margin-top:4px}
+
+.memories{padding-bottom:130px}.memory-head{padding:calc(18px + env(safe-area-inset-top)) 17px 16px}.memory-head h1{margin:0;font-size:32px;letter-spacing:-1px}.memory-head p{color:#8e8e93;margin:6px 0 0}
+.capture{margin:0 14px 18px;padding:15px;border-radius:22px;background:#151517;border:1px solid #27272a}
+textarea{width:100%;min-height:110px;background:transparent;color:#fff;border:0;outline:0;resize:none;font-size:17px;line-height:1.4}textarea::placeholder{color:#747479}
+.capture-row{display:flex;gap:8px}.action{padding:10px 13px;border-radius:13px;background:#29292d;color:#fff;font-size:13px;font-weight:650}.action.primary{background:#fff;color:#000}
+.memory-card{margin:10px 14px;padding:17px;border-radius:20px;background:#151517;border:1px solid #27272a}.memory-card .label{font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:.08em}.memory-card p{font-size:16px;line-height:1.45;margin:8px 0 0}
+
+.calendar{padding-bottom:130px}.cal-head{padding:calc(18px + env(safe-area-inset-top)) 17px 15px}.cal-head h1{margin:0;font-size:32px}.month{padding:0 14px}.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;color:#8e8e93;text-align:center;font-size:11px;margin-bottom:5px}.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.day{min-height:58px;background:#111113;border-radius:10px;padding:7px;font-size:12px}.day.today{outline:1px solid #fff}.event{display:block;background:#2d2d32;border-radius:5px;padding:3px;margin-top:5px;font-size:9px;white-space:nowrap;overflow:hidden}
+
+.tasks{padding-bottom:130px}.tasks-head{padding:calc(18px + env(safe-area-inset-top)) 17px 16px;display:flex;align-items:center;justify-content:space-between}.tasks-head h1{margin:0;font-size:32px}.ai-mini{width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);font-size:20px;box-shadow:0 8px 22px rgba(0,0,0,.22)}.ai-mini:active{transform:scale(.92)}.task-add{margin:0 14px 12px;display:flex;gap:8px}.task-add input{flex:1;background:#171719;border:1px solid #29292c;color:#fff;border-radius:14px;padding:13px;outline:0}.task-add button{background:#fff;color:#000;border-radius:14px;padding:0 16px;font-weight:700}.task{margin:0 14px;border-bottom:1px solid #252527;padding:14px 3px;display:flex;align-items:center;gap:11px}.task input{width:20px;height:20px;accent-color:#fff}.task.done span{text-decoration:line-through;color:#777}
+
+.sticky{padding-bottom:130px}.sticky-head{padding:calc(18px + env(safe-area-inset-top)) 17px 16px}.sticky-head h1{margin:0;font-size:32px}.note-add{margin:0 14px 14px;background:#151517;border:1px solid #27272a;border-radius:20px;padding:14px}.note-add textarea{min-height:90px}.notes{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px}.note{min-height:135px;border-radius:18px;padding:14px;background:linear-gradient(145deg,#252528,#171719);border:1px solid #2c2c30;box-shadow:0 8px 22px rgba(0,0,0,.2)}.note b{display:block;margin-bottom:7px}.note small{color:#8e8e93}.ai-sheet{position:fixed;z-index:260;left:14px;right:14px;bottom:88px;padding:16px;border-radius:24px;background:rgba(27,27,30,.86);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);box-shadow:0 18px 60px rgba(0,0,0,.58);transform:translateY(130%);opacity:0;pointer-events:none;transition:.28s}.ai-sheet.open{transform:translateY(0);opacity:1;pointer-events:auto}.ai-sheet h3{margin:0 0 5px;font-size:18px}.ai-sheet p{margin:0 0 12px;color:#8e8e93;font-size:13px}.ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ai-actions button{padding:13px;border-radius:14px;background:#29292d;text-align:left}.ai-actions button b{display:block;font-size:14px}.ai-actions button span{display:block;color:#8e8e93;font-size:11px;margin-top:3px}.sheet-backdrop{position:fixed;z-index:250;inset:0;background:rgba(0,0,0,.34);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:.22s}.sheet-backdrop.open{opacity:1;pointer-events:auto}.photo-menu{position:fixed;z-index:270;left:12px;right:12px;bottom:84px;padding:8px;border-radius:24px;background:rgba(29,29,32,.9);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(34px) saturate(180%);-webkit-backdrop-filter:blur(34px) saturate(180%);box-shadow:0 20px 65px rgba(0,0,0,.65);transform:translateY(130%);opacity:0;pointer-events:none;transition:.3s}.photo-menu.open{transform:translateY(0);opacity:1;pointer-events:auto}.photo-menu button{width:100%;background:transparent;padding:14px;border-radius:15px;text-align:left;font-size:16px}.photo-menu button:active{background:#333337}.photo-menu .danger{color:#ff6969}.photo-menu .selected-title{padding:9px 14px 12px;color:#8e8e93;font-size:12px}.face-list{display:flex;gap:9px;overflow:auto;padding:0 14px 5px}.face{min-width:105px;padding:12px;border-radius:17px;background:#151517;border:1px solid #29292c}.face-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#5b5b62,#242429);display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:18px}.face input{width:100%;background:transparent;border:0;color:#fff;outline:0;font-size:13px}.face small{color:#777;font-size:10px}.calendar-nav-icon{width:20px;height:19px;border:1.7px solid currentColor;border-radius:5px;position:relative;display:inline-block}.calendar-nav-icon:before{content:'';position:absolute;left:-1.7px;right:-1.7px;top:4px;border-top:1.7px solid currentColor}.calendar-nav-icon:after{content:'';position:absolute;left:4px;top:-4px;width:2px;height:6px;background:currentColor;box-shadow:9px 0 0 currentColor;border-radius:2px}
+@media(min-width:700px){
+ .content{max-width:700px;margin:auto}.bottom-wrap{left:50%;right:auto;width:430px;transform:translateX(-50%)}.grid{grid-template-columns:repeat(4,1fr)}
+}
+
+.search-expand{position:fixed;z-index:150;left:12px;right:12px;top:calc(8px + env(safe-area-inset-top));transform:translateY(-125%);opacity:0;pointer-events:none;transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .22s ease}
+.search-expand.open{transform:translateY(0);opacity:1;pointer-events:auto}
+.search-panel{height:56px;border-radius:19px;background:rgba(42,42,46,.86);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(32px) saturate(180%);-webkit-backdrop-filter:blur(32px) saturate(180%);display:flex;align-items:center;gap:9px;padding:0 14px;box-shadow:0 15px 45px rgba(0,0,0,.5)}
+.search-panel .glass{font-size:20px;color:#aaa}.search-panel input{flex:1;border:0;outline:0;background:transparent;color:white;font-size:17px}.search-panel input::placeholder{color:#9a9a9f}.search-close{background:#55555a;width:29px;height:29px;border-radius:50%;font-size:17px;color:#ddd}
+.search-backdrop{position:fixed;z-index:140;inset:0;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .25s}.search-backdrop.open{opacity:1;pointer-events:auto}
+.search-launch{position:fixed;z-index:110;right:18px;top:calc(13px + env(safe-area-inset-top));width:40px;height:40px;border-radius:14px;background:rgba(45,45,48,.72);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);font-size:21px;display:flex;align-items:center;justify-content:center}
+.settings{padding-bottom:130px}.settings-head{padding:calc(18px + env(safe-area-inset-top)) 17px 16px}.settings-head h1{margin:0;font-size:32px;letter-spacing:-1px}.settings-group{margin:0 14px 18px;border-radius:20px;background:#151517;border:1px solid #27272a;overflow:hidden}.settings-title{padding:13px 16px 7px;color:#8e8e93;font-size:12px;text-transform:uppercase;letter-spacing:.07em}.setting{padding:15px 16px;border-top:1px solid #27272a;display:flex;align-items:center;justify-content:space-between;gap:15px}.setting b{font-size:16px}.setting p{margin:4px 0 0;color:#8e8e93;font-size:12px;line-height:1.35}.range{width:125px;accent-color:#fff}.share-btn{background:#29292d;border-radius:12px;padding:9px 12px;font-weight:650}.connection{color:#6edb91;font-size:12px}.toggle{width:48px;height:28px;border-radius:20px;background:#3a3a3d;padding:3px}.toggle.on{background:#fff}.toggle i{display:block;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}.toggle.on i{background:#000;transform:translateX(20px)}
+</style>
+<style>
+/* ===== FINAL VISUAL PASS ===== */
+:root{
+  --bg:#08090b;
+  --panel:rgba(25,26,30,.78);
+  --panel-strong:rgba(31,32,37,.94);
+  --line:rgba(255,255,255,.09);
+  --text:#f5f5f7;
+  --muted:#9b9ca3;
+  --accent:#8ab4ff;
+  --radius:22px;
+  --photo-radius:18px;
+}
+html,body{background:var(--bg)!important;color:var(--text)!important;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Inter,Roboto,Arial,sans-serif!important;
+  -webkit-font-smoothing:antialiased;
+}
+*{box-sizing:border-box}
+button,input,textarea,select{font:inherit}
+button{ -webkit-tap-highlight-color:transparent; }
+
+.app,.app-container,.phone,.shell{
+  background:radial-gradient(120% 80% at 50% -10%,rgba(75,85,110,.20),transparent 55%),var(--bg)!important;
+}
+
+header,.topbar,.app-header{
+  padding:18px 18px 10px!important;
+}
+h1,h2,h3{letter-spacing:-.025em!important}
+h1{font-size:30px!important;font-weight:760!important}
+h2{font-size:23px!important;font-weight:720!important}
+h3{font-size:17px!important;font-weight:680!important}
+p,.subtitle,.muted,.secondary{color:var(--muted)!important}
+
+.photo-grid,.photos-grid{
+  gap:3px!important;
+  padding:8px 10px 110px!important;
+}
+.photo-grid img,.photos-grid img,.photo,.photo-card{
+  border-radius:var(--photo-radius)!important;
+  overflow:hidden!important;
+}
+.photo-card{position:relative;transition:transform .18s ease,filter .18s ease}
+.photo-card:active{transform:scale(.965);filter:brightness(.88)}
+
+.bottom-nav,.tabbar,.bottom-bar{
+  background:rgba(15,16,19,.78)!important;
+  backdrop-filter:blur(24px) saturate(150%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(150%)!important;
+  border-top:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:0 -12px 35px rgba(0,0,0,.28)!important;
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom))!important;
+}
+.bottom-nav button,.tabbar button,.bottom-bar button{
+  border:0!important;
+  background:transparent!important;
+  color:#8f9098!important;
+  border-radius:17px!important;
+  min-height:50px!important;
+  transition:background .2s,color .2s,transform .15s!important;
+}
+.bottom-nav button.active,.tabbar button.active,.bottom-bar button.active{
+  color:#fff!important;
+  background:rgba(255,255,255,.095)!important;
+}
+.bottom-nav button:active,.tabbar button:active,.bottom-bar button:active{transform:scale(.94)}
+
+.card,.panel,.settings-card,.task-card,.note-card,.calendar-card{
+  background:linear-gradient(145deg,rgba(31,32,37,.82),rgba(20,21,24,.76))!important;
+  border:1px solid var(--line)!important;
+  border-radius:22px!important;
+  box-shadow:0 14px 40px rgba(0,0,0,.18)!important;
+  backdrop-filter:blur(18px)!important;
+  -webkit-backdrop-filter:blur(18px)!important;
+}
+
+input,textarea,select{
+  background:rgba(255,255,255,.065)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.09)!important;
+  border-radius:16px!important;
+  outline:none!important;
+}
+input:focus,textarea:focus,select:focus{
+  border-color:rgba(138,180,255,.55)!important;
+  box-shadow:0 0 0 3px rgba(138,180,255,.10)!important;
+}
+
+.primary,.primary-btn,.add-btn,.action-primary{
+  border:0!important;
+  border-radius:17px!important;
+  background:#f3f4f6!important;
+  color:#111216!important;
+  font-weight:700!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.25)!important;
+}
+.secondary-btn,.ghost,.action-secondary{
+  border:1px solid rgba(255,255,255,.10)!important;
+  border-radius:17px!important;
+  background:rgba(255,255,255,.065)!important;
+  color:#fff!important;
+}
+
+.search-overlay,.search-panel,.context-menu,.photo-menu,.modal{
+  background:rgba(22,23,27,.72)!important;
+  backdrop-filter:blur(28px) saturate(145%)!important;
+  -webkit-backdrop-filter:blur(28px) saturate(145%)!important;
+  border:1px solid rgba(255,255,255,.11)!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.55)!important;
+}
+.search-overlay input{background:rgba(255,255,255,.09)!important}
+
+.ai-button,.ai-icon{
+  background:linear-gradient(145deg,rgba(138,180,255,.24),rgba(255,255,255,.08))!important;
+  border:1px solid rgba(138,180,255,.25)!important;
+  box-shadow:0 8px 26px rgba(70,100,180,.16)!important;
+}
+
+.calendar-day{
+  border-radius:15px!important;
+  transition:background .15s!important;
+}
+.calendar-day.today,.calendar-day.selected{
+  background:rgba(138,180,255,.20)!important;
+  border:1px solid rgba(138,180,255,.35)!important;
+}
+
+.section-title{
+  margin:18px 18px 8px!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  color:#8f9098!important;
+  text-transform:uppercase!important;
+  letter-spacing:.08em!important;
+}
+
+@media(max-width:600px){
+  .app,.app-container,.phone,.shell{min-height:100dvh!important}
+}
+</style></head>
+<body>
+<div class="app">
+<main class="content">
+<button class="search-launch" id="searchLaunch" aria-label="Search">⌕</button>
+<div class="search-backdrop" id="searchBackdrop"></div>
+<div class="search-expand" id="searchExpand">
+  <div class="search-panel">
+    <span class="glass">⌕</span>
+    <input id="globalSearch" placeholder="Search photos, places, people…">
+    <button class="search-close" id="searchClose">×</button>
+  </div>
+</div>
+
+  <section id="photos" class="page active">
+    <header class="header"><h1>Photos</h1><div class="small" id="photoCount">Your memories</div></header>
+    <div id="photoContent">
+      <div class="date">October 7</div>
+      <div class="grid" id="todayGrid"></div>
+      <div class="date">October 6</div>
+      <div class="grid" id="yesterdayGrid"></div>
+      <div class="date">October 5</div>
+      <div class="grid" id="olderGrid"></div>
+    </div>
+  </section>
+<section id="sticky" class="page sticky">
+    <div class="sticky-head"><h1>Sticky Notes</h1></div>
+    <div class="note-add"><textarea id="noteInput" placeholder="Write a quick note…"></textarea><button class="action primary" id="noteAdd">Add note</button></div>
+    <div class="notes" id="notesList"></div>
+  </section>
+
+  <section id="calendar" class="page calendar">
+    <div class="cal-head"><h1>Calendar</h1></div>
+    <div class="month">
+      <div class="week"><b>M</b><b>T</b><b>W</b><b>T</b><b>F</b><b>S</b><b>S</b></div>
+      <div class="days" id="days"></div>
+    </div>
+  </section>
+
+  <section id="tasks" class="page tasks">
+    <div class="tasks-head"><h1>Tasks</h1><button class="ai-mini" id="taskAi" aria-label="Local AI">✦</button></div>
+    <div class="task-add"><input id="taskInput" placeholder="Add a task…"><button id="taskAdd">Add</button></div>
+    <div id="taskList"></div>
+  </section>
+
+<section id="settings" class="page settings">
+  <div class="settings-head"><h1>Settings</h1></div>
+
+  <div class="settings-title">Photos</div>
+  <div class="settings-group">
+    <div class="setting">
+      <div><b>Photo corner radius</b><p>Choose how rounded your photo grid is.</p></div>
+      <input id="radiusRange" class="range" type="range" min="0" max="32" value="18">
+    </div>
+    <div class="setting">
+      <div><b>Photo spacing</b><p>Control the gap between photos.</p></div>
+      <input id="spacingRange" class="range" type="range" min="0" max="8" value="2">
+    </div>
+  </div>
+
+  <div class="settings-title">Sharing</div>
+  <div class="settings-group">
+    <div class="setting">
+      <div><b>Android Quick Share / iPhone AirDrop</b><p>On the real native app, Share will open the phone's system sharing sheet. Quick Share or AirDrop will appear automatically when supported.</p></div>
+      <span class="connection">Ready</span>
+    </div>
+    <div class="setting">
+      <div><b>Test system share</b><p>Try the browser/device share sheet.</p></div>
+      <button class="share-btn" id="shareTest">Share</button>
+    </div>
+  </div>
+
+  <div class="settings-title">AI · People</div>
+  <div class="settings-group">
+    <div class="setting" style="display:block">
+      <div><b>Faces recognized on this device</b><p>Local AI can group faces it finds in your photos. Give each person a name.</p></div>
+      <div class="face-list" id="faceList">
+        <div class="face"><div class="face-avatar">🙂</div><input value="Person 1" aria-label="Name face 1"><small>12 photos</small></div>
+        <div class="face"><div class="face-avatar">🙂</div><input value="Person 2" aria-label="Name face 2"><small>8 photos</small></div>
+        <div class="face"><div class="face-avatar">🙂</div><input value="Person 3" aria-label="Name face 3"><small>5 photos</small></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-title">Privacy</div>
+  <div class="settings-group">
+    <div class="setting">
+      <div><b>Local-first library</b><p>Your photo index is designed to stay on your device.</p></div>
+      <span class="connection">On</span>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="bottom-wrap">
+  <nav class="bottom">
+    <button class="nav active" data-page="photos"><span class="icon">▦</span><span>Photos</span></button>
+    <button class="nav" data-page="tasks"><span class="icon">✓</span><span>Tasks</span></button>
+    <button class="nav" data-page="sticky"><span class="icon">▤</span><span>Notes</span></button>
+    <button class="nav" data-page="calendar"><span class="icon"><i class="calendar-nav-icon"></i></span><span>Calendar</span></button>
+    <button class="nav" data-page="settings"><span class="icon">⚙</span><span>Settings</span></button>
+  </nav>
+</div>
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
+<div class="ai-sheet" id="aiSheet"><h3>✦ Local AI</h3><p>Runs on the phone in the full app. Use it to turn notes into tasks and organize your day.</p><div class="ai-actions"><button id="aiSuggest"><b>Suggest tasks</b><span>From your notes</span></button><button id="aiPlan"><b>Plan my day</b><span>Use today's tasks</span></button></div></div>
+<div class="photo-menu" id="photoMenu"><div class="selected-title" id="selectedPhotoTitle">Photo selected</div><button id="photoSettings">⚙ Photo settings</button><button id="photoFullscreen">⛶ Fullscreen mode</button><button id="photoDescription">✎ Description</button><button id="photoTask">✓ Put on a task</button></div>
+</div>
+
+<script>
+const pages=[...document.querySelectorAll('.page')];
+const navs=[...document.querySelectorAll('.nav')];
+function showPage(id){
+ pages.forEach(p=>p.classList.toggle('active',p.id===id));
+ navs.forEach(n=>n.classList.toggle('active',n.dataset.page===id));
+ document.querySelector('.content').scrollTo({top:0,behavior:'smooth'});
+ closeSearch();
+}
+navs.forEach(n=>n.addEventListener('click',()=>showPage(n.dataset.page)));
+
+const searchExpand=document.getElementById('searchExpand');
+const searchBackdrop=document.getElementById('searchBackdrop');
+const globalSearch=document.getElementById('globalSearch');
+function openSearch(){
+ searchExpand.classList.add('open'); searchBackdrop.classList.add('open');
+ setTimeout(()=>globalSearch.focus(),180);
+}
+function closeSearch(){
+ searchExpand.classList.remove('open'); searchBackdrop.classList.remove('open');
+}
+document.getElementById('searchLaunch').onclick=openSearch;
+document.getElementById('searchClose').onclick=closeSearch;
+searchBackdrop.onclick=closeSearch;
+globalSearch.onkeydown=e=>{if(e.key==='Escape')closeSearch()};
+
+function attachPhotoLongPress(photo,index){
+ photo.dataset.index=index;
+ let timer=null;
+ const start=()=>{photo.classList.add('longpressing');timer=setTimeout(()=>openPhotoMenu(photo),550)};
+ const end=()=>{if(timer)clearTimeout(timer);timer=null;if(!photoMenu?.classList.contains('open'))photo.classList.remove('longpressing')};
+ photo.addEventListener('pointerdown',start);photo.addEventListener('pointerup',end);photo.addEventListener('pointercancel',end);photo.addEventListener('pointerleave',end);
+}
+function makePlaceholders(el,count){
+ for(let i=0;i<count;i++){
+  const d=document.createElement('div');d.className='photo placeholder';
+  d.innerHTML='<span class="photo-ai-badge">✦</span>';
+  d.style.animationDelay=(i*18)+'ms';el.appendChild(d);
+  attachPhotoLongPress(d,document.querySelectorAll('.photo').length);
+ }
+}
+makePlaceholders(document.getElementById('todayGrid'),12);
+makePlaceholders(document.getElementById('yesterdayGrid'),15);
+makePlaceholders(document.getElementById('olderGrid'),18);
+document.getElementById('photoCount').textContent='45 photos';
+
+const days=document.getElementById('days');
+for(let i=1;i<=31;i++){
+ const d=document.createElement('div');d.className='day'+(i===7?' today':'');
+ d.innerHTML='<b>'+i+'</b>'+(i===7?'<span class="event">Today</span>':(i===12?'<span class="event">Trip</span>':''));
+ days.appendChild(d);
+}
+const tasks=[];
+function renderTasks(){
+ const l=document.getElementById('taskList');l.innerHTML='';
+ if(!tasks.length){l.innerHTML='<div style="padding:20px 17px;color:#777">No tasks yet.</div>';return}
+ tasks.forEach((t,i)=>{
+  const row=document.createElement('div');row.className='task'+(t.done?' done':'');
+  row.innerHTML='<input type="checkbox" '+(t.done?'checked':'')+'><span>'+t.text.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+'</span>';
+  row.querySelector('input').onchange=e=>{t.done=e.target.checked;renderTasks()};
+  l.appendChild(row);
+ });
+}
+document.getElementById('taskAdd').onclick=()=>{const x=document.getElementById('taskInput');if(x.value.trim()){tasks.push({text:x.value.trim(),done:false});x.value='';renderTasks()}};
+document.getElementById('taskInput').onkeydown=e=>{if(e.key==='Enter')document.getElementById('taskAdd').click()};renderTasks();
+
+// Sticky notes
+const notes=[{title:'Trip idea',text:'Remember the sunset spot.'},{title:'Shopping',text:'Pick up a new charger.'}];
+function renderNotes(){const l=document.getElementById('notesList');l.innerHTML='';notes.forEach(n=>{const d=document.createElement('div');d.className='note';d.innerHTML='<b>'+n.title+'</b><div>'+n.text.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+'</div><small>Local note</small>';l.appendChild(d)})}
+renderNotes();
+document.getElementById('noteAdd').onclick=()=>{const x=document.getElementById('noteInput');const v=x.value.trim();if(v){notes.unshift({title:'New note',text:v});x.value='';renderNotes()}};
+
+// Local AI on Tasks
+const aiSheet=document.getElementById('aiSheet'), sheetBackdrop=document.getElementById('sheetBackdrop');
+function closeSheets(){aiSheet.classList.remove('open');photoMenu.classList.remove('open');sheetBackdrop.classList.remove('open')}
+document.getElementById('taskAi').onclick=()=>{aiSheet.classList.add('open');sheetBackdrop.classList.add('open')};
+sheetBackdrop.onclick=closeSheets;
+document.getElementById('aiSuggest').onclick=()=>{closeSheets(); if(!tasks.length){tasks.push({text:'Review today’s notes',done:false});renderTasks()} else alert('Local AI suggestion added to your task list.');};
+document.getElementById('aiPlan').onclick=()=>{closeSheets(); alert('Local AI would organize your tasks using only on-device data in the native app.');};
+
+// Long-press photo menu
+const photoMenu=document.getElementById('photoMenu');let pressTimer=null;let selectedPhoto=null;
+function openPhotoMenu(photo){selectedPhoto=photo;photo.classList.remove('longpressing');document.getElementById('selectedPhotoTitle').textContent='Photo selected · '+(photo.dataset.index||'');photoMenu.classList.add('open');sheetBackdrop.classList.add('open')}
+
+document.getElementById('photoSettings').onclick=()=>{closeSheets();showPage('settings')};
+document.getElementById('photoFullscreen').onclick=()=>{closeSheets();if(selectedPhoto?.requestFullscreen){selectedPhoto.requestFullscreen().catch(()=>{})}else alert('Fullscreen mode will use the native photo viewer on Android/iPhone.');};
+document.getElementById('photoDescription').onclick=()=>{const d=prompt('Photo description', '');closeSheets();if(d!==null)alert('Description saved locally.');};
+document.getElementById('photoTask').onclick=()=>{const t=prompt('Task for this photo','Review this photo');closeSheets();if(t&&t.trim()){tasks.push({text:t.trim(),done:false});renderTasks();showPage('tasks')}};
+
+document.getElementById('radiusRange').oninput=e=>{
+ document.documentElement.style.setProperty('--photo-radius',e.target.value+'px');
+};
+document.getElementById('spacingRange').oninput=e=>{
+ document.querySelectorAll('.grid').forEach(g=>g.style.gap=e.target.value+'px');
+};
+document.getElementById('shareTest').onclick=async()=>{
+ const data={title:'MyPhoto',text:'Shared from MyPhoto'};
+ if(navigator.share){try{await navigator.share(data)}catch(e){}}
+ else alert('On Android/iPhone, the native version will use the system share sheet so Quick Share or AirDrop can appear when supported.');
+};
+</script>
+</body>
+</html>
